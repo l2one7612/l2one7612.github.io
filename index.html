@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Jingeon Art Museum</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#f5f5f5; --muted:#555555; --text:#111111; --accent:#6ea8fe; --accent-2:#9b7bff; --danger:#ff6b6b;
+  --ring: 0 0 0 2px rgba(110,168,254,.35);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  background: radial-gradient(1200px 600px at 20% -10%, rgba(110,168,254,.08), transparent),
+              radial-gradient(1000px 500px at 120% 10%, rgba(155,123,255,.08), transparent), var(--bg);
+  color:var(--text);
+}
+header{
+  position:sticky; top:0; z-index:10; backdrop-filter:saturate(150%) blur(8px);
+  background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.75));
+  border-bottom:1px solid rgba(0,0,0,.06);
+}
+.wrap{max-width:1200px; margin:0 auto; padding:16px}
+.title{display:flex; gap:12px; align-items:center}
+.logo{width:36px; height:36px; border-radius:12px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); display:grid; place-items:center; box-shadow: 0 6px 24px rgba(110,168,254,.35)}
+.logo svg{filter:drop-shadow(0 2px 6px rgba(0,0,0,.35))}
+h1{font-size:20px; margin:0}
+.controls{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px}
+button, .btn{background:#ffffff; color:var(--text); border:1px solid rgba(0,0,0,.08); padding:10px 12px; border-radius:12px; cursor:pointer; transition:.2s; display:inline-flex; gap:8px; align-items:center; text-decoration:none}
+button:hover, .btn:hover{background:#f0f0f0}
+button:focus-visible, .btn:focus-visible{outline:none; box-shadow:var(--ring)}
+.accent{background: linear-gradient(135deg, rgba(110,168,254,.15), rgba(155,123,255,.12)); border-color: rgba(110,168,254,.35)}
+.danger{background: rgba(255,107,107,.12); border-color: rgba(255,107,107,.4)}
+input[type="file"]{display:none}
+.pill{padding:8px 12px; background:#f0f0f0; border:1px dashed rgba(0,0,0,.12); border-radius:12px}
+.search{flex:1; min-width:200px; display:flex; align-items:center; gap:8px; background:#eaeaea; border:1px solid rgba(0,0,0,.08); padding:10px 12px; border-radius:12px}
+.search input{background:transparent; border:none; color:var(--text); outline:none; width:100%}
+.uploader{margin-top:16px; border:2px dashed rgba(0,0,0,.14); border-radius:16px; background:linear-gradient(180deg, rgba(0,0,0,.03), rgba(0,0,0,.02)); display:grid; place-items:center; padding:28px; text-align:center}
+.uploader.drag{border-color: var(--accent); box-shadow:var(--ring)}
+.uploader p{margin:6px 0; color:var(--muted)}
+main{max-width:1200px; margin:0 auto; padding:20px 16px 80px}
+.grid{display:grid; grid-template-columns: repeat( auto-fill, minmax(220px, 1fr) ); gap:14px}
+.card{background:#ffffff; border:1px solid rgba(0,0,0,.08); border-radius:16px; overflow:hidden; display:flex; flex-direction:column; position:relative}
+.thumb{aspect-ratio: 4/3; background:#f5f5f5; display:grid; place-items:center; overflow:hidden}
+.thumb img{width:100%; height:100%; object-fit:cover}
+.meta{padding:12px}
+.meta h3{margin:0 0 6px; font-size:15px}
+.meta textarea, .meta input{width:100%; resize:vertical; background:#f9f9f9; color:var(--text); border:1px solid rgba(0,0,0,.1); border-radius:10px; padding:8px}
+.meta label{display:block; font-size:12px; color:var(--muted); margin:8px 0 4px}
+.row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+.tag{font-size:12px; background:#f0f0f0; border:1px solid rgba(0,0,0,.08); padding:4px 8px; border-radius:999px; cursor:pointer}
+.card .bar{display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-top:1px solid rgba(0,0,0,.06); gap:8px}
+.card .bar .left, .card .bar .right{display:flex; gap:6px; align-items:center}
+.icon-btn{background:transparent; border:1px solid rgba(0,0,0,.08); padding:8px; border-radius:10px; cursor:pointer}
+.icon-btn:hover{background:#f0f0f0}
+.lightbox{position:fixed; inset:0; background:rgba(255,255,255,.95); display:none; place-items:center; z-index:50}
+.lightbox.open{display:grid}
+.lightbox img{max-width:90vw; max-height:80vh; border-radius:16px; border:1px solid rgba(0,0,0,.1)}
+.lightbox .caption{margin-top:12px; color:var(--muted); max-width:90vw}
+.empty-state{opacity:.75; text-align:center; padding:40px; border:1px dashed rgba(0,0,0,.12); border-radius:16px}
+footer{position:fixed; bottom:0; width:100%; background:linear-gradient(180deg, transparent, rgba(255,255,255,.9) 30%); display:grid; place-items:center; pointer-events:none}
+.hint{pointer-events:auto; margin:12px; font-size:12px; color:var(--muted); background:#f5f5f5; border:1px solid rgba(0,0,0,.08); padding:10px 12px; border-radius:12px}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="title" aria-label="사이트 제목">
+      <div class="logo" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L2 7v10l10 5 10-5V7L12 2z" stroke="white" stroke-opacity=".9" stroke-width="1.5"/>
+          <circle cx="12" cy="12" r="3.25" stroke="white" stroke-opacity=".9" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <h1>진건 미술관</h1>
+    </div>
+    <div class="controls" role="toolbar" aria-label="도구 모음">
+      <label class="btn accent" for="file-input" title="이미지 업로드">이미지 추가</label>
+      <input id="file-input" type="file" accept="image/*" multiple>
+      <button id="export-btn" class="btn" title="갤러리를 파일로 내보내기">내보내기</button>
+      <label class="btn" for="import-input" title="갤러리 데이터 불러오기">불러오기</label>
+      <input id="import-input" type="file" accept="application/json">
+      <button id="clear-btn" class="btn danger" title="모든 작품 삭제">비우기</button>
+      <div class="search" role="search">
+        <input id="search-input" type="text" placeholder="제목, 설명, 태그 검색" aria-label="검색" />
+      </div>
+    </div>
+    <div id="uploader" class="uploader" aria-label="드래그 앤 드롭 업로드 영역" tabindex="0">
+      <div>
+        <strong>이미지를 이곳에 드래그하거나, 상단의 이미지 추가 버튼을 눌러주세요.</strong>
+        <p>JPG/PNG/WebP 지원. 여러 파일을 한 번에 추가할 수 있습니다.</p>
+      </div>
+    </div>
+  </div>
+</header>
+<main>
+  <section id="gallery" class="grid" aria-live="polite"></section>
+  <div id="empty" class="empty-state hidden">아직 작품이 없습니다. 상단에서 이미지를 추가하십시오.</div>
+</main>
+<div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-label="이미지 확대 보기">
+  <div style="text-align:center">
+    <img id="lightbox-img" alt="작품" />
+    <div id="lightbox-cap" class="caption"></div>
+    <div style="margin-top:12px;">
+      <button id="lightbox-close" class="btn">닫기</button>
+      <a id="lightbox-download" class="btn accent" download>다운로드</a>
+    </div>
+  </div>
+</div>
+<footer><div class="hint">작품은 로컬 스토리지에 저장됩니다. 브라우저를 닫아도 유지됩니다.</div></footer>
+<script>
+let gallery = document.getElementById("gallery");
+let emptyState = document.getElementById("empty");
+let uploader = document.getElementById("uploader");
+let fileInput = document.getElementById("file-input");
+let importInput = document.getElementById("import-input");
+let searchInput = document.getElementById("search-input");
+let lightbox = document.getElementById("lightbox");
+let lightboxImg = document.getElementById("lightbox-img");
+let lightboxCap = document.getElementById("lightbox-cap");
+let lightboxClose = document.getElementById("lightbox-close");
+let lightboxDownload = document.getElementById("lightbox-download");
+
+let galleryData = JSON.parse(localStorage.getItem("gallery")) || [];
+
+function saveGallery(){localStorage.setItem("gallery", JSON.stringify(galleryData))}
+function updateEmptyState(){emptyState.classList.toggle("hidden", galleryData.length>0)}
+function createCard(item,index){
+  let card = document.createElement("div");
+  card.className="card";
+  card.draggable=true;
+  let thumb = document.createElement("div"); thumb.className="thumb";
+  let img = document.createElement("img"); img.src=item.src; img.alt=item.title||"작품"; thumb.appendChild(img);
+  thumb.addEventListener("click",()=>{lightboxImg.src=item.src; lightboxCap.textContent=item.title||""; lightboxDownload.href=item.src; lightbox.classList.add("open")});
+  card.appendChild(thumb);
+
+  let meta = document.createElement("div"); meta.className="meta";
+  let title = document.createElement("input"); title.type="text"; title.value=item.title||""; title.placeholder="제목"; title.addEventListener("input",(e)=>{item.title=e.target.value; saveGallery()});
+  meta.appendChild(title);
+  let desc = document.createElement("textarea"); desc.placeholder="설명"; desc.value=item.desc||""; desc.addEventListener("input",(e)=>{item.desc=e.target.value; saveGallery()});
+  meta.appendChild(desc);
+
+  let tagRow = document.createElement("div"); tagRow.className="row";
+  (item.tags||[]).forEach(t=>{
+    let tag = document.createElement("div"); tag.className="tag"; tag.textContent=t; tag.addEventListener("click",()=>{searchInput.value=t; filterGallery();});
+    tagRow.appendChild(tag);
+  });
+  meta.appendChild(tagRow);
+
+  card.appendChild(meta);
+  let bar = document.createElement("div"); bar.className="bar";
+  let left = document.createElement("div"); left.className="left";
+  let delBtn = document.createElement("button"); delBtn.className="icon-btn danger"; delBtn.textContent="삭제"; delBtn.addEventListener("click",()=>{galleryData.splice(index,1); saveGallery(); renderGallery();});
+  left.appendChild(delBtn);
+  bar.appendChild(left);
+  card.appendChild(bar);
+  return card;
+}
+
+function renderGallery(){
+  gallery.innerHTML="";
+  galleryData.forEach((item,i)=>{gallery.appendChild(createCard(item,i))});
+  updateEmptyState();
+}
+
+function handleFiles(files){
+  Array.from(files).forEach(file=>{
+    if(!file.type.startsWith("image/")) return;
+    let reader = new FileReader();
+    reader.onload = e=>{
+      galleryData.push({src:e.target.result,title:"",desc:"",tags:[]});
+      saveGallery(); renderGallery();
+    }
+    reader.readAsDataURL(file);
+  });
+}
+
+fileInput.addEventListener("change",(e)=>{handleFiles(e.target.files)});
+importInput.addEventListener("change",(e)=>{
+  let file=e.target.files[0];
+  if(!file) return;
+  let reader=new FileReader();
+  reader.onload=function(ev){
+    try{let data=JSON.parse(ev.target.result); if(Array.isArray(data)){galleryData=data; saveGallery(); renderGallery()}}
+    catch(err){alert("잘못된 파일입니다.")}
+  }; reader.readAsText(file);
+});
+
+document.getElementById("export-btn").addEventListener("click",()=>{
+  let blob = new Blob([JSON.stringify(galleryData,null,2)],{type:"application/json"});
+  let url=URL.createObjectURL(blob); let a=document.createElement("a"); a.href=url; a.download="gallery.json"; a.click(); URL.revokeObjectURL(url);
+});
+document.getElementById("clear-btn").addEventListener("click",()=>{
+  if(confirm("모든 작품을 삭제하시겠습니까?")){galleryData=[]; saveGallery(); renderGallery();}
+});
+
+searchInput.addEventListener("input",filterGallery);
+function filterGallery(){
+  let val=searchInput.value.toLowerCase();
+  let filtered = galleryData.filter(item=>
+    (item.title||"").toLowerCase().includes(val)||
+    (item.desc||"").toLowerCase().includes(val)||
+    (item.tags||[]).some(t=>t.toLowerCase().includes(val))
+  );
+  gallery.innerHTML="";
+  filtered.forEach((item,i)=>{gallery.appendChild(createCard(item,i))});
+  updateEmptyState();
+}
+
+// Drag & Drop
+uploader.addEventListener("dragover",e=>{e.preventDefault(); uploader.classList.add("drag")});
+uploader.addEventListener("dragleave",()=>{uploader.classList.remove("drag")});
+uploader.addEventListener("drop",e=>{e.preventDefault(); uploader.classList.remove("drag"); handleFiles(e.dataTransfer.files)});
+
+// Lightbox
+lightboxClose.addEventListener("click",()=>{lightbox.classList.remove("open")});
+lightbox.addEventListener("click",e=>{if(e.target===lightbox) lightbox.classList.remove("open")});
+
+renderGallery();
+</script>
+</body>
+</html>
