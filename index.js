@@ -5,12 +5,12 @@
 let galleryData = [
   // 여기에 작품 정보를 추가하세요.
   // 예시:
-  // {
-  //   src: "./images/my-painting.jpg",
-  //   title: "나의 첫 작품",
-  //   desc: "어릴 적 처음으로 그렸던 그림입니다.",
-  //   tags: ["수채화", "추억"],
-  // },
+  {
+    src: "art1.jpg",
+    title: "도깨비와 축제를",
+    desc: "어릴 적 처음으로 그렸던 그림입니다.",
+    tags: ["수채화", "추억"],
+  },
 ];
 
 let gallery = document.getElementById("gallery");
@@ -105,5 +105,6 @@ lightbox.addEventListener("click", e => {
     lightbox.classList.remove("open");
   }
 });
+
 
 renderGallery(galleryData);
