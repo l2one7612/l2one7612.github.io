@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>학생 커뮤니티</title>
+  <!-- Tailwind CSS CDN을 로드합니다 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col text-gray-900">
+
+  <!-- 로딩 스크린 -->
+  <div id="loadingScreen" class="fixed inset-0 bg-white z-50 flex items-center justify-center transition-opacity duration-500">
+    <div class="flex flex-col items-center">
+      <svg class="animate-spin h-12 w-12 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <p class="mt-4 text-gray-500">로딩 중...</p>
+    </div>
+  </div>
+
+  <!-- 메시지 모달 -->
+  <div id="messageModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-xl p-6 shadow-2xl max-w-sm w-full">
+      <h3 id="modalTitle" class="text-xl font-bold mb-2 text-gray-900"></h3>
+      <p id="modalMessage" class="text-gray-700 mb-4"></p>
+      <button onclick="closeModal()" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300">확인</button>
+    </div>
+  </div>
+
+  <!-- 헤더 -->
+  <header class="bg-white shadow-sm p-4 sticky top-0 z-10">
+    <div class="container mx-auto flex justify-between items-center flex-wrap gap-4">
+      <div class="flex items-center space-x-4">
+        <a href="#" class="text-3xl font-extrabold text-gray-900">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 inline-block text-indigo-600">
+            <path d="M11.72 15.657a1.5 1.5 0 0 1-2.121 0L.929 7.061A1.5 1.5 0 0 1 2.05 4.94L10.5 13.388 18.95 4.94a1.5 1.5 0 0 1 2.122 2.122l-8.6 8.6a1.5 1.5 0 0 1-2.122 0Z" />
+          </svg>
+          학생 커뮤니티
+        </a>
+        <nav class="hidden md:flex space-x-6">
+          <div class="relative group">
+            <button onclick="toggleSubmenu()" class="text-gray-700 font-semibold hover:text-indigo-600 transition duration-200">
+              게시판
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 inline-block ml-1 align-sub transform transition-transform duration-200">
+                <path fill-rule="evenodd" d="M5.22 8.72a.75.75 0 0 0 1.06 1.06L10 6.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L10.53 4.47a.75.75 0 0 0-1.06 0L5.22 8.72Z" clip-rule="evenodd" />
+              </svg>
+            </button>
+            <div id="boardSubmenu" class="absolute left-0 mt-2 w-40 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden z-20">
+              <a href="#" onclick="showSection('board1')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">1학년 게시판</a>
+              <a href="#" onclick="showSection('board2')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">2학년 게시판</a>
+              <a href="#" onclick="showSection('board3')" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg">3학년 게시판</a>
+            </div>
+          </div>
+          <a href="#" onclick="showSection('free')" class="text-gray-700 font-semibold hover:text-indigo-600 transition duration-200">자율게시판</a>
+          <a href="#" onclick="showSection('resources')" class="text-gray-700 font-semibold hover:text-indigo-600 transition duration-200">문제집 자료실</a>
+        </nav>
+      </div>
+      <div id="authContainer" class="flex items-center space-x-4">
+        <!-- 로그인 상태에 따라 버튼이 동적으로 변경됩니다 -->
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 배너 -->
+  <div class="bg-gray-50 text-gray-900 py-16 text-center shadow-inner">
+    <div class="container mx-auto px-4">
+      <h1 class="text-4xl sm:text-5xl font-extrabold mb-2">학생들을 위한 소통 공간</h1>
+      <p class="text-lg sm:text-xl text-gray-700 font-medium">자유롭게 학습 정보와 일상을 공유해보세요.</p>
+    </div>
+  </div>
+
+  <!-- 메인 콘텐츠 영역 -->
+  <main class="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
+    <div class="flex flex-col lg:flex-row gap-6">
+      
+      <!-- 사이드바 -->
+      <aside class="w-full lg:w-72 bg-white rounded-2xl shadow-md p-6 h-fit">
+        <h2 class="text-xl font-bold mb-4 text-indigo-600">필터</h2>
+        <div class="space-y-2">
+          <label class="flex items-center text-gray-700">
+            <input type="checkbox" class="form-checkbox text-indigo-600 rounded-md mr-2">
+            <span>인기순</span>
+          </label>
+          <label class="flex items-center text-gray-700">
+            <input type="checkbox" class="form-checkbox text-indigo-600 rounded-md mr-2">
+            <span>최신순</span>
+          </label>
+        </div>
+        <div class="mt-8 text-sm text-gray-500 break-words">
+            <span class="font-bold">내 ID:</span> <span id="userIdDisplay">로그인 필요</span>
+        </div>
+      </aside>
+
+      <!-- 메인 콘텐츠 -->
+      <section id="mainContent" class="flex-1 bg-white rounded-2xl shadow-md p-6">
+        <!-- 동적으로 내용이 표시됩니다 -->
+        <div class="flex items-center justify-center h-full text-gray-400 text-lg font-medium">
+          <p>좌측 메뉴에서 게시판을 선택해주세요.</p>
+        </div>
+      </section>
+      
+    </div>
+  </main>
+
+  <!-- Firebase SDK를 로드합니다 -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, doc, addDoc, getDocs, onSnapshot, query, where, orderBy, serverTimestamp, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // 디버그 로그를 활성화합니다.
+    setLogLevel('debug');
+
+    // Canvas에서 제공하는 전역 변수를 사용합니다.
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+    const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+    // Firebase 초기화
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    let currentUserId = null;
+
+    // UI 요소
+    const loadingScreen = document.getElementById('loadingScreen');
+    const mainContent = document.getElementById('mainContent');
+    const authContainer = document.getElementById('authContainer');
+    const userIdDisplay = document.getElementById('userIdDisplay');
+
+    // 메시지 모달 관련 함수
+    const messageModal = document.getElementById('messageModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+
+    function showModal(title, message) {
+      modalTitle.textContent = title;
+      modalMessage.textContent = message;
+      messageModal.classList.remove('hidden');
+      messageModal.classList.add('flex');
+    }
+
+    window.closeModal = function() {
+      messageModal.classList.add('hidden');
+      messageModal.classList.remove('flex');
+    }
+
+    // 인증 상태 변경 감지
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUserId = user.uid;
+        console.log("Logged in:", currentUserId);
+        authContainer.innerHTML = `
+          <div class="flex items-center space-x-4">
+            <span class="text-gray-700 font-medium hidden sm:block">환영합니다!</span>
+            <button onclick="logout()" class="bg-red-500 text-white py-2 px-4 rounded-lg font-semibold hover:bg-red-600 transition duration-300">로그아웃</button>
+          </div>
+        `;
+        userIdDisplay.textContent = currentUserId;
+      } else {
+        currentUserId = null;
+        console.log("Logged out.");
+        authContainer.innerHTML = `
+          <button onclick="showSection('login')" class="bg-indigo-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300">
+            로그인 / 회원가입
+          </button>
+        `;
+        userIdDisplay.textContent = "로그인 필요";
+      }
+    });
+
+    // 초기 인증 및 로딩 스크린 관리
+    (async function initAuth() {
+      try {
+        if (initialAuthToken) {
+          await signInWithCustomToken(auth, initialAuthToken);
+          console.log("Signed in with custom token.");
+        } else {
+          await signInAnonymously(auth);
+          console.log("Signed in anonymously.");
+        }
+      } catch (error) {
+        console.error("Firebase Auth error:", error);
+      } finally {
+        // 인증 시도가 완료되면 (성공 또는 실패) 로딩 스크린을 숨깁니다.
+        loadingScreen.classList.add('hidden');
+        loadingScreen.classList.remove('flex');
+      }
+    })();
+
+    // 게시판 데이터베이스 경로
+    const postsCollection = collection(db, `artifacts/${appId}/public/data/posts`);
+
+    const sections = {
+      login: `
+        <div class='bg-white p-8 rounded-2xl shadow-inner'>
+          <h2 class='text-2xl font-bold mb-6 text-center text-indigo-600'>로그인 / 회원가입</h2>
+          <div class='space-y-4'>
+            <input type='email' id='userEmail' placeholder='이메일 주소' class='w-full p-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-600'>
+            <input type='password' id='userPassword' placeholder='비밀번호' class='w-full p-3 rounded-lg border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-600'>
+            <button onclick='login()' class='w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300'>로그인</button>
+            <button onclick='signup()' class='w-full bg-gray-200 text-gray-800 py-3 rounded-lg font-semibold hover:bg-gray-300 transition duration-300'>회원가입</button>
+          </div>
+        </div>
+      `,
+      board1: boardSection('1학년 게시판', 'board1'),
+      board2: boardSection('2학년 게시판', 'board2'),
+      board3: boardSection('3학년 게시판', 'board3'),
+      free: boardSection('자율게시판', 'free'),
+      resources: boardSection('문제집 자료실', 'resources')
+    };
+
+    function boardSection(title, key) {
+      return `
+        <div class="bg-white p-6 rounded-2xl shadow-inner">
+          <h2 class="text-2xl font-bold mb-4 text-indigo-600">${title}</h2>
+          <div class="mb-6" id="postFormContainer">
+            <textarea id='postContent' placeholder='여기에 글을 작성하세요...' class='w-full p-4 rounded-xl border border-gray-300 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-600' rows='4'></textarea>
+            <button class='mt-2 bg-indigo-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300' onclick="addPost('${key}')">작성하기</button>
+          </div>
+        </div>
+        <div id='postsContainer' class="mt-6 space-y-4">
+          <!-- 여기에 게시물 목록이 로드됩니다 -->
+        </div>
+      `;
+    }
+    
+    // 섹션 표시 및 Firestore 데이터 로드
+    window.showSection = function(name) {
+      mainContent.innerHTML = sections[name];
+      if (name !== 'login') {
+        const postsContainer = document.getElementById('postsContainer');
+        if (postsContainer) {
+          loadPosts(name);
+        }
+      }
+    }
+
+    // 서브메뉴 토글
+    window.toggleSubmenu = function() {
+      const submenu = document.getElementById('boardSubmenu');
+      submenu.classList.toggle('hidden');
+    }
+
+    // 회원가입
+    window.signup = async function() {
+      const email = document.getElementById('userEmail').value;
+      const password = document.getElementById('userPassword').value;
+      if (!email || !password) {
+        showModal('오류', '이메일과 비밀번호를 모두 입력해주세요.');
+        return;
+      }
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        showModal('성공', '회원가입이 완료되었습니다!');
+      } catch (error) {
+        showModal('회원가입 실패', `오류: ${error.message}`);
+        console.error("Signup error:", error);
+      }
+    }
+
+    // 로그인
+    window.login = async function() {
+      const email = document.getElementById('userEmail').value;
+      const password = document.getElementById('userPassword').value;
+      if (!email || !password) {
+        showModal('오류', '이메일과 비밀번호를 모두 입력해주세요.');
+        return;
+      }
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        showModal('성공', '로그인에 성공했습니다!');
+      } catch (error) {
+        showModal('로그인 실패', `오류: ${error.message}`);
+        console.error("Login error:", error);
+      }
+    }
+
+    // 로그아웃
+    window.logout = async function() {
+      try {
+        await signOut(auth);
+        showModal('로그아웃', '성공적으로 로그아웃되었습니다.');
+      } catch (error) {
+        showModal('로그아웃 실패', `오류: ${error.message}`);
+        console.error("Logout error:", error);
+      }
+    }
+
+    // 게시물 추가
+    window.addPost = async function(board) {
+      const postContent = document.getElementById('postContent').value;
+      if (!postContent) {
+        showModal('알림', '글 내용을 입력해주세요.');
+        return;
+      }
+      if (!currentUserId) {
+        showModal('오류', '글을 작성하려면 로그인해야 합니다.');
+        return;
+      }
+      try {
+        await addDoc(postsCollection, {
+          userId: currentUserId,
+          content: postContent,
+          board: board,
+          createdAt: serverTimestamp()
+        });
+        document.getElementById('postContent').value = '';
+      } catch (error) {
+        showModal('작성 실패', `오류: ${error.message}`);
+        console.error("Add post error:", error);
+      }
+    }
+    
+    // 게시물 삭제
+    window.deletePost = async function(postId, postUserId) {
+      if (postUserId !== currentUserId) {
+        showModal('권한 없음', '자신이 작성한 게시물만 삭제할 수 있습니다.');
+        return;
+      }
+      try {
+        await deleteDoc(doc(db, `artifacts/${appId}/public/data/posts`, postId));
+        showModal('삭제 완료', '게시물이 성공적으로 삭제되었습니다.');
+      } catch (error) {
+        showModal('삭제 실패', `오류: ${error.message}`);
+        console.error("Delete post error:", error);
+      }
+    }
+
+    // 게시물 불러오기 (실시간 동기화)
+    function loadPosts(board) {
+      const postsContainer = document.getElementById('postsContainer');
+      // Firestore의 인덱스 에러를 방지하기 위해 orderBy()를 제거하고 클라이언트 측에서 정렬합니다.
+      const q = query(postsCollection, where("board", "==", board));
+      
+      onSnapshot(q, (snapshot) => {
+        const posts = [];
+        snapshot.forEach(doc => {
+            posts.push({ id: doc.id, ...doc.data() });
+        });
+
+        // 클라이언트 측에서 'createdAt' 필드를 기준으로 최신순 정렬
+        posts.sort((a, b) => {
+          const aSeconds = a.createdAt ? a.createdAt.seconds : 0;
+          const bSeconds = b.createdAt ? b.createdAt.seconds : 0;
+          return bSeconds - aSeconds;
+        });
+
+        let postHtml = '';
+        if (posts.length === 0) {
+          postHtml = `<div class="p-6 text-center text-gray-400">아직 게시물이 없습니다.</div>`;
+        } else {
+          posts.forEach(post => {
+            const isMyPost = post.userId === currentUserId;
+            const createdAt = post.createdAt ? new Date(post.createdAt.seconds * 1000).toLocaleString('ko-KR') : '방금 전';
+            
+            postHtml += `
+              <div class='bg-white p-6 rounded-2xl shadow-md space-y-2'>
+                <div class='flex justify-between items-center'>
+                  <div class="flex items-center space-x-2 text-sm text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5 text-gray-500">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-5.5-2.5a.75.75 0 0 1 .75-.75h2.25a.75.75 0 0 1 0 1.5H13.5v.25a.75.75 0 0 1-.75.75H12a.75.75 0 0 1-.75-.75V8.5h-.25a.75.75 0 0 1-.75-.75V7a.75.75 0 0 1 .75-.75h.25v-.25a.75.75 0 0 1 .75-.75ZM8.5 7.75a.75.75 0 0 0 .75-.75v-1.5a.75.75 0 0 0-1.5 0v1.5a.75.75 0 0 0 .75.75Z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="font-medium text-gray-700">${isMyPost ? '나' : post.userId.substring(0, 8) + '...'}</span>
+                    <span class="font-light">${createdAt}</span>
+                  </div>
+                  ${isMyPost ? `<button onclick="deletePost('${post.id}', '${post.userId}')" class="text-red-500 hover:text-red-700 transition duration-300">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.166a48.11 48.11 0 0 1-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.166m-1.022.166A48.12 48.12 0 0 1 3 6.94m14.74 2.864c-.452 3.193-3.692 7.42-7.53 7.42S5.786 15.11 5.334 11.914M16.5 7.5h-9" />
+                      </svg>
+                    </button>` : ''}
+                </div>
+                <p class='text-gray-900 break-words'>${post.content}</p>
+              </div>
+            `;
+          });
+        }
+        postsContainer.innerHTML = postHtml;
+      }, (error) => {
+        console.error("Error fetching posts:", error);
+      });
+    }
+  </script>
+</body>
+</html>
